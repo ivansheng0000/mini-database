@@ -51,3 +51,92 @@
  * comments that explain why something is done. This file is intentionally
  * not implemented yet.
  */
+
+#include <cstdint>
+#include <stdexcept>
+#include <string>
+#include <variant>
+
+/*
+ * Supported database data types.
+ *
+ * These are the types the user is allowed to write when creating a table:
+ *
+ *   INTEGER
+ *   REAL
+ *   TEXT
+ *   BOOLEAN
+ *
+ * DataType is our program's "label" for the type.
+ * Value is the real C++ storage type that can hold one actual value.
+ */
+enum class DataType {
+    Integer,
+    Real,
+    Text,
+    Boolean
+};
+
+using Value = std::variant<
+    std::int64_t,
+    double,
+    std::string,
+    bool
+>;
+
+/*
+ * Convert a user's type word into our DataType enum.
+ *
+ * Example:
+ *   "INTEGER" becomes DataType::Integer
+ *   "TEXT"    becomes DataType::Text
+ */
+DataType parseDataType(const std::string& typeText) {
+    if (typeText == "INTEGER") {
+        return DataType::Integer;
+    }
+    else if (typeText == "REAL") {
+        return DataType::Real;
+    }
+    else if (typeText == "TEXT") {
+        return DataType::Text;
+    }
+    else if (typeText == "BOOLEAN") {
+        return DataType::Boolean;
+    }
+
+    throw std::runtime_error("Unknown data type: " + typeText);
+}
+
+/*
+ * Convert a user's value into the correct C++ type.
+ *
+ * The expectedType tells us what the value should become.
+ *
+ * Example:
+ *   input: "25", expectedType: DataType::Integer
+ *   result: a Value containing std::int64_t
+ */
+Value parseValue(const std::string& input, DataType expectedType) {
+    if (expectedType == DataType::Integer) {
+        return static_cast<std::int64_t>(std::stoll(input));
+    }
+    else if (expectedType == DataType::Real) {
+        return std::stod(input);
+    }
+    else if (expectedType == DataType::Text) {
+        return input;
+    }
+    else if (expectedType == DataType::Boolean) {
+        if (input == "true") {
+            return true;
+        }
+        else if (input == "false") {
+            return false;
+        }
+
+        throw std::runtime_error("Boolean must be true or false.");
+    }
+
+    throw std::runtime_error("Invalid data type.");
+}
