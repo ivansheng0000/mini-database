@@ -5,14 +5,8 @@
 
 #include <gtest/gtest.h>
 
-/*
- * For now, the project is only one .cpp file and does not have a header yet.
- * Including the .cpp file lets us test the current helper functions directly.
- *
- * Later, when the project grows, we should move shared declarations into a
- * header file such as mini_database.h.
- */
-#include "../milestone-1/mini_database.cpp"
+#include "data_type.h"
+#include "value.h"
 
 TEST(ParseDataTypeTest, AcceptsSupportedTypes) {
     EXPECT_EQ(parseDataType("INTEGER"), DataType::Integer);
