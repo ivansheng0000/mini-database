@@ -5,8 +5,11 @@
 
 #include <gtest/gtest.h>
 
-#include "data_type.h"
-#include "value.h"
+#include "column.hpp"
+#include "data_type.hpp"
+#include "row.hpp"
+#include "table.hpp"
+#include "value.hpp"
 
 TEST(ParseDataTypeTest, AcceptsSupportedTypes) {
     EXPECT_EQ(parseDataType("INTEGER"), DataType::Integer);
@@ -60,4 +63,73 @@ TEST(ParseValueTest, RejectsInvalidBooleanValue) {
 
 TEST(ParseValueTest, RejectsInvalidIntegerValue) {
     EXPECT_THROW(parseValue("abc", DataType::Integer), std::invalid_argument);
+}
+
+TEST(ColumnTest, StoresColumnInformation) {
+    Column column("id", DataType::Integer, true);
+
+    EXPECT_EQ(column.name, "id");
+    EXPECT_EQ(column.type, DataType::Integer);
+    EXPECT_TRUE(column.isPrimaryKey);
+}
+
+TEST(ColumnTest, StoresNonPrimaryKeyColumn) {
+    Column column("name", DataType::Text, false);
+
+    EXPECT_EQ(column.name, "name");
+    EXPECT_EQ(column.type, DataType::Text);
+    EXPECT_FALSE(column.isPrimaryKey);
+}
+
+TEST(RowTest, StoresValuesInOrder) {
+    Row row({
+        static_cast<std::int64_t>(1),
+        std::string("Alice"),
+        static_cast<std::int64_t>(20)
+    });
+
+    ASSERT_EQ(row.values.size(), 3);
+
+    ASSERT_TRUE(std::holds_alternative<std::int64_t>(row.values[0]));
+    EXPECT_EQ(std::get<std::int64_t>(row.values[0]), 1);
+
+    ASSERT_TRUE(std::holds_alternative<std::string>(row.values[1]));
+    EXPECT_EQ(std::get<std::string>(row.values[1]), "Alice");
+
+    ASSERT_TRUE(std::holds_alternative<std::int64_t>(row.values[2]));
+    EXPECT_EQ(std::get<std::int64_t>(row.values[2]), 20);
+}
+
+TEST(TableTest, StoresNameColumnsAndRows) {
+    std::vector<Column> columns = {
+        Column("id", DataType::Integer, true),
+        Column("name", DataType::Text, false),
+        Column("age", DataType::Integer, false)
+    };
+
+    std::vector<Row> rows = {
+        Row({
+            static_cast<std::int64_t>(1),
+            std::string("Alice"),
+            static_cast<std::int64_t>(20)
+        }),
+        Row({
+            static_cast<std::int64_t>(2),
+            std::string("Bob"),
+            static_cast<std::int64_t>(21)
+        })
+    };
+
+    Table table("students", columns, rows);
+
+    EXPECT_EQ(table.name, "students");
+    ASSERT_EQ(table.columns.size(), 3);
+    ASSERT_EQ(table.rows.size(), 2);
+
+    EXPECT_EQ(table.columns[0].name, "id");
+    EXPECT_EQ(table.columns[0].type, DataType::Integer);
+    EXPECT_TRUE(table.columns[0].isPrimaryKey);
+
+    ASSERT_TRUE(std::holds_alternative<std::string>(table.rows[1].values[1]));
+    EXPECT_EQ(std::get<std::string>(table.rows[1].values[1]), "Bob");
 }

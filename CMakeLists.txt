@@ -18,6 +18,31 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
+add_library(
+    mini_database_core
+    milestone-1/column.cpp
+    milestone-1/data_type.cpp
+    milestone-1/row.cpp
+    milestone-1/table.cpp
+    milestone-1/value.cpp
+)
+
+target_include_directories(
+    mini_database_core
+    PUBLIC
+    milestone-1
+)
+
+add_executable(
+    mini_database
+    milestone-1/main.cpp
+)
+
+target_link_libraries(
+    mini_database
+    mini_database_core
+)
+
 add_executable(
     mini_database_tests
     test/test_mini_database.cpp
@@ -25,6 +50,7 @@ add_executable(
 
 target_link_libraries(
     mini_database_tests
+    mini_database_core
     GTest::gtest_main
 )
 

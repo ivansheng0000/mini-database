@@ -8,11 +8,11 @@
  *
  * The project is now split into multiple files:
  *
- *   data_type.h / data_type.cpp
+ *   data_type.hpp / data_type.cpp
  *     - Defines the supported database data types.
  *     - Converts user type words like "INTEGER" into DataType values.
  *
- *   value.h / value.cpp
+ *   value.hpp / value.cpp
  *     - Defines Value, which can store one INTEGER, REAL, TEXT, or BOOLEAN.
  *     - Converts user input like "25" into the correct C++ value.
  *
