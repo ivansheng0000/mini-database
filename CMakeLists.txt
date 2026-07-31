@@ -21,6 +21,8 @@ enable_testing()
 add_library(
     mini_database_core
     milestone-1/column.cpp
+    milestone-1/command_parser.cpp
+    milestone-1/database.cpp
     milestone-1/data_type.cpp
     milestone-1/row.cpp
     milestone-1/table.cpp

@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include "column.hpp"
+#include "database.hpp"
 #include "data_type.hpp"
 #include "row.hpp"
 #include "table.hpp"
@@ -63,6 +64,24 @@ TEST(ParseValueTest, RejectsInvalidBooleanValue) {
 
 TEST(ParseValueTest, RejectsInvalidIntegerValue) {
     EXPECT_THROW(parseValue("abc", DataType::Integer), std::invalid_argument);
+}
+
+TEST(ValueMatchesTypeTest, IntegerValueMatchesIntegerType) {
+    Value value = static_cast<std::int64_t>(25);
+
+    EXPECT_TRUE(valueMatchesType(value, DataType::Integer));
+}
+
+TEST(ValueMatchesTypeTest, TextValueMatchesTextType) {
+    Value value = std::string("Alice");
+
+    EXPECT_TRUE(valueMatchesType(value, DataType::Text));
+}
+
+TEST(ValueMatchesTypeTest, TextValueDoesNotMatchIntegerType) {
+    Value value = std::string("25");
+
+    EXPECT_FALSE(valueMatchesType(value, DataType::Integer));
 }
 
 TEST(ColumnTest, StoresColumnInformation) {
@@ -132,4 +151,175 @@ TEST(TableTest, StoresNameColumnsAndRows) {
 
     ASSERT_TRUE(std::holds_alternative<std::string>(table.rows[1].values[1]));
     EXPECT_EQ(std::get<std::string>(table.rows[1].values[1]), "Bob");
+}
+
+TEST(TableTest, HasColumnReturnsTrueForExistingColumn) {
+    Table table(
+        "students",
+        {
+            Column("id", DataType::Integer, true),
+            Column("name", DataType::Text, false),
+            Column("age", DataType::Integer, false)
+        },
+        {}
+    );
+
+    EXPECT_TRUE(table.hasColumn("name"));
+}
+
+TEST(TableTest, HasColumnReturnsFalseForMissingColumn) {
+    Table table(
+        "students",
+        {
+            Column("id", DataType::Integer, true),
+            Column("name", DataType::Text, false)
+        },
+        {}
+    );
+
+    EXPECT_FALSE(table.hasColumn("email"));
+}
+
+TEST(TableTest, AddRowAcceptsValidRow) {
+    Table table(
+        "students",
+        {
+            Column("id", DataType::Integer, true),
+            Column("name", DataType::Text, false),
+            Column("age", DataType::Integer, false)
+        },
+        {}
+    );
+
+    table.addRow(Row({
+        static_cast<std::int64_t>(1),
+        std::string("Alice"),
+        static_cast<std::int64_t>(20)
+    }));
+
+    ASSERT_EQ(table.rows.size(), 1);
+    EXPECT_EQ(std::get<std::string>(table.rows[0].values[1]), "Alice");
+}
+
+TEST(TableTest, AddRowRejectsWrongNumberOfValues) {
+    Table table(
+        "students",
+        {
+            Column("id", DataType::Integer, true),
+            Column("name", DataType::Text, false),
+            Column("age", DataType::Integer, false)
+        },
+        {}
+    );
+
+    EXPECT_THROW(
+        table.addRow(Row({
+            static_cast<std::int64_t>(1),
+            std::string("Alice")
+        })),
+        std::runtime_error
+    );
+
+    EXPECT_TRUE(table.rows.empty());
+}
+
+TEST(TableTest, AddRowRejectsWrongValueType) {
+    Table table(
+        "students",
+        {
+            Column("id", DataType::Integer, true),
+            Column("name", DataType::Text, false),
+            Column("age", DataType::Integer, false)
+        },
+        {}
+    );
+
+    EXPECT_THROW(
+        table.addRow(Row({
+            static_cast<std::int64_t>(1),
+            std::string("Alice"),
+            std::string("twenty")
+        })),
+        std::runtime_error
+    );
+
+    EXPECT_TRUE(table.rows.empty());
+}
+
+TEST(TableTest, AddRowRejectsDuplicatePrimaryKey) {
+    Table table(
+        "students",
+        {
+            Column("id", DataType::Integer, true),
+            Column("name", DataType::Text, false)
+        },
+        {}
+    );
+
+    table.addRow(Row({
+        static_cast<std::int64_t>(1),
+        std::string("Alice")
+    }));
+
+    EXPECT_THROW(
+        table.addRow(Row({
+            static_cast<std::int64_t>(1),
+            std::string("Bob")
+        })),
+        std::runtime_error
+    );
+
+    EXPECT_EQ(table.rows.size(), 1);
+}
+
+TEST(DatabaseTest, StartsWithNoTables) {
+    Database database;
+
+    EXPECT_TRUE(database.tables.empty());
+    EXPECT_FALSE(database.hasTable("students"));
+}
+
+TEST(DatabaseTest, CreateTableStoresTableByName) {
+    Database database;
+
+    std::vector<Column> columns = {
+        Column("id", DataType::Integer, true),
+        Column("name", DataType::Text, false)
+    };
+
+    std::vector<Row> rows = {
+        Row({
+            static_cast<std::int64_t>(1),
+            std::string("Alice")
+        })
+    };
+
+    Table studentsTable("students", columns, rows);
+
+    database.createTable(studentsTable);
+
+    ASSERT_EQ(database.tables.size(), 1);
+    EXPECT_TRUE(database.hasTable("students"));
+    EXPECT_FALSE(database.hasTable("courses"));
+    EXPECT_EQ(database.tables.at("students").name, "students");
+    EXPECT_EQ(database.tables.at("students").columns.size(), 2);
+    EXPECT_EQ(database.tables.at("students").rows.size(), 1);
+}
+
+TEST(DatabaseTest, CreateTableRejectsDuplicateTableName) {
+    Database database;
+
+    std::vector<Column> columns = {
+        Column("id", DataType::Integer, true)
+    };
+
+    std::vector<Row> rows;
+
+    Table firstTable("students", columns, rows);
+    Table duplicateTable("students", columns, rows);
+
+    database.createTable(firstTable);
+
+    EXPECT_THROW(database.createTable(duplicateTable), std::runtime_error);
+    EXPECT_EQ(database.tables.size(), 1);
 }

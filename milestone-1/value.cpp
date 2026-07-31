@@ -27,3 +27,19 @@ Value parseValue(const std::string& input, DataType expectedType) {
 
     throw std::runtime_error("Invalid data type.");
 }
+
+bool valueMatchesType(const Value& value, DataType type) {
+    if (type == DataType::Integer) {
+        return std::holds_alternative<std::int64_t>(value);
+    }
+    else if (type == DataType::Real) {
+        return std::holds_alternative<double>(value);
+    }
+    else if (type == DataType::Text) {
+        return std::holds_alternative<std::string>(value);
+    }
+    else if (type == DataType::Boolean) {
+        return std::holds_alternative<bool>(value);
+    }
+    return false;
+}

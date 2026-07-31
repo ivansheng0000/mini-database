@@ -14,3 +14,5 @@ using Value = std::variant<
 >;
 
 Value parseValue(const std::string& input, DataType expectedType);
+
+bool valueMatchesType(const Value& value, DataType type);
